@@ -1,0 +1,1505 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Spor Takip - PWA</title>
+    <meta name="description" content="Modern spor takip uygulamas">
+    <meta name="theme-color" content="#1a1a2e">
+    <link rel="manifest" href="data:application/json;base64,ewogICJuYW1lIjogIlNwb3IgVGFraXAiLAogICJzaG9ydF9uYW1lIjogIlNwb3JUYWtpcCIsCiAgInN0YXJ0X3VybCI6ICIuL3Nwb3ItdGFraXAuaHRtbCIsCiAgImRpc3BsYXkiOiAic3RhbmRhbG9uZSIsCiAgImJhY2tncm91bmRfY29sb3IiOiAiIzFhMWEyZSIsCiAgInRoZW1lX2NvbG9yIjogIiMxYTFhMmUiLAogICJvcmllbnRhdGlvbiI6ICJwb3J0cmFpdC1wcmltYXJ5Igp9">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --bg-primary: #0f0f1e;
+            --bg-secondary: #1a1a2e;
+            --bg-card: #16213e;
+            --text-primary: #ffffff;
+            --text-secondary: #b8bcc8;
+            --accent: #00ff88;
+            --accent-hover: #00cc6a;
+            --border: #2a2a4a;
+            --shadow: 0 4px 6px rgba(0, 255, 136, 0.1);
+            --shadow-hover: 0 8px 12px rgba(0, 255, 136, 0.2);
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, sans-serif;
+            background: linear-gradient(135deg, var(--bg-primary) 0%, var(--bg-secondary) 100%);
+            color: var(--text-primary);
+            min-height: 100vh;
+            line-height: 1.6;
+        }
+
+        .container {
+            max-width: 100%;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        header {
+            text-align: center;
+            margin-bottom: 40px;
+            padding: 20px 0;
+        }
+
+        h1 {
+            font-size: 2.5rem;
+            font-weight: 800;
+            background: linear-gradient(45deg, var(--accent), #00ccff);
+            background-clip: text;
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 10px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .add-exercise-section {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .input-group {
+            margin-bottom: 20px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            color: var(--text-secondary);
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+        }
+
+        input[type="text"],
+        input[type="number"],
+        textarea {
+            width: 100%;
+            padding: 15px;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 12px;
+            color: var(--text-primary);
+            font-size: 1rem;
+            transition: all 0.3s ease;
+        }
+
+        input[type="text"]:focus,
+        input[type="number"]:focus,
+        textarea:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+        }
+
+        .file-input-wrapper {
+            position: relative;
+            overflow: hidden;
+            display: inline-block;
+            width: 100%;
+        }
+
+        .file-input-wrapper input[type="file"] {
+            position: absolute;
+            left: -9999px;
+        }
+
+        .file-input-label {
+            display: block;
+            padding: 15px;
+            background: var(--bg-secondary);
+            border: 2px dashed var(--border);
+            border-radius: 12px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            color: var(--text-secondary);
+        }
+
+        .file-input-label:hover {
+            border-color: var(--accent);
+            color: var(--accent);
+        }
+
+        .media-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 10px;
+            margin-top: 10px;
+        }
+
+        .media-item {
+            position: relative;
+            border-radius: 8px;
+            overflow: hidden;
+            border: 2px solid var(--border);
+        }
+
+        .media-item img,
+        .media-item video {
+            width: 100%;
+            height: 120px;
+            object-fit: cover;
+            display: block;
+        }
+
+        .media-item .remove-media {
+            position: absolute;
+            top: 5px;
+            right: 5px;
+            background: rgba(255, 68, 68, 0.9);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .set-rep-inputs {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .start-workout-btn {
+            background: linear-gradient(45deg, #ff6b6b, #ff8e53);
+            color: white;
+            border: none;
+            padding: 20px;
+            border-radius: 15px;
+            font-size: 1.2rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            width: 100%;
+            margin: 20px 0;
+            box-shadow: 0 6px 20px rgba(255, 107, 107, 0.3);
+        }
+
+        .start-workout-btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(255, 107, 107, 0.4);
+        }
+
+        .workout-mode {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--bg-primary);
+            z-index: 1000;
+            display: none;
+            overflow-y: auto;
+        }
+
+        .workout-mode.active {
+            display: block;
+        }
+
+        .workout-header {
+            background: linear-gradient(135deg, var(--bg-secondary), var(--bg-card));
+            padding: 20px;
+            text-align: center;
+            border-bottom: 2px solid var(--accent);
+        }
+
+        .workout-title {
+            font-size: 1.8rem;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 10px;
+        }
+
+        .workout-progress {
+            color: var(--text-secondary);
+            font-size: 1rem;
+        }
+
+        .exercise-display {
+            padding: 40px 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .current-exercise {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 30px;
+            border: 2px solid var(--accent);
+            box-shadow: 0 10px 30px rgba(0, 255, 136, 0.2);
+        }
+
+        .exercise-name-display {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--text-primary);
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .exercise-details {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-bottom: 30px;
+            flex-wrap: wrap;
+        }
+
+        .detail-item {
+            text-align: center;
+        }
+
+        .detail-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+        }
+
+        .detail-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .workout-media-gallery {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        .workout-media-item img,
+        .workout-media-item video {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 12px;
+            border: 2px solid var(--border);
+        }
+
+        .workout-note {
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 15px;
+            color: var(--text-primary);
+            min-height: 100px;
+            margin-bottom: 30px;
+            font-size: 1rem;
+        }
+
+        .workout-controls {
+            display: flex;
+            gap: 15px;
+            justify-content: center;
+            margin-top: 30px;
+        }
+
+        .workout-btn {
+            padding: 15px 30px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .workout-btn.complete {
+            background: linear-gradient(45deg, var(--accent), var(--accent-hover));
+            color: var(--bg-primary);
+        }
+
+        .workout-btn.skip {
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border: 2px solid var(--border);
+        }
+
+        .workout-btn.exit {
+            background: #ff4444;
+            color: white;
+        }
+
+        .workout-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .assessment-modal {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.9);
+            z-index: 2000;
+            display: none;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .assessment-modal.active {
+            display: flex;
+        }
+
+        .assessment-content {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 40px;
+            max-width: 500px;
+            width: 90%;
+            text-align: center;
+            border: 2px solid var(--accent);
+        }
+
+        .assessment-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: var(--accent);
+            margin-bottom: 30px;
+        }
+
+        .difficulty-options {
+            display: flex;
+            justify-content: space-around;
+            margin-bottom: 30px;
+            gap: 15px;
+        }
+
+        .difficulty-btn {
+            padding: 15px 20px;
+            border: 2px solid var(--border);
+            background: var(--bg-secondary);
+            color: var(--text-primary);
+            border-radius: 12px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-size: 1rem;
+            font-weight: 600;
+        }
+
+        .difficulty-btn:hover {
+            border-color: var(--accent);
+            transform: translateY(-2px);
+        }
+
+        .difficulty-btn.selected {
+            background: var(--accent);
+            color: var(--bg-primary);
+            border-color: var(--accent);
+        }
+
+        .emoji-feedback {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .emoji-btn {
+            font-size: 2rem;
+            background: none;
+            border: none;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            opacity: 0.5;
+        }
+
+        .emoji-btn:hover {
+            opacity: 1;
+            transform: scale(1.2);
+        }
+
+        .emoji-btn.selected {
+            opacity: 1;
+            transform: scale(1.3);
+        }
+
+        .history-section {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .history-item {
+            background: var(--bg-secondary);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 15px;
+            border: 1px solid var(--border);
+        }
+
+        .history-date {
+            color: var(--accent);
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .history-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .history-stats {
+            display: flex;
+            gap: 20px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+
+        .history-stat {
+            color: var(--text-secondary);
+        }
+
+        .history-difficulty {
+            display: inline-block;
+            padding: 5px 10px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-right: 10px;
+        }
+
+        .difficulty-easy {
+            background: #4caf50;
+            color: white;
+        }
+
+        .difficulty-medium {
+            background: #ff9800;
+            color: white;
+        }
+
+        .difficulty-hard {
+            background: #f44336;
+            color: white;
+        }
+
+        .btn {
+            background: linear-gradient(45deg, var(--accent), var(--accent-hover));
+            color: var(--bg-primary);
+            border: none;
+            padding: 15px 30px;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .exercise-list {
+            margin-bottom: 30px;
+        }
+
+        .exercise-card {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 25px;
+            margin-bottom: 20px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .exercise-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-hover);
+        }
+
+        .exercise-card.completed {
+            border-color: var(--accent);
+            background: linear-gradient(135deg, var(--bg-card), rgba(0, 255, 136, 0.05));
+        }
+
+        .exercise-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .exercise-checkbox {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .checkbox-wrapper {
+            position: relative;
+        }
+
+        .checkbox-wrapper input[type="checkbox"] {
+            width: 24px;
+            height: 24px;
+            appearance: none;
+            background: var(--bg-secondary);
+            border: 2px solid var(--border);
+            border-radius: 6px;
+            cursor: pointer;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+
+        .checkbox-wrapper input[type="checkbox"]:checked {
+            background: var(--accent);
+            border-color: var(--accent);
+        }
+
+        .checkbox-wrapper input[type="checkbox"]:checked::after {
+            content: 'L';
+            position: absolute;
+            top: 2px;
+            left: 6px;
+            color: var(--bg-primary);
+            font-weight: bold;
+            transform: rotate(-5deg);
+        }
+
+        .exercise-title {
+            font-size: 1.3rem;
+            font-weight: 700;
+            color: var(--text-primary);
+            flex: 1;
+        }
+
+        .exercise-image {
+            width: 100%;
+            max-width: 300px;
+            height: 200px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            border: 2px solid var(--border);
+        }
+
+        .exercise-note {
+            width: 100%;
+            min-height: 80px;
+            padding: 12px;
+            background: var(--bg-secondary);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            color: var(--text-primary);
+            font-size: 0.95rem;
+            resize: vertical;
+            transition: all 0.3s ease;
+        }
+
+        .exercise-note:focus {
+            outline: none;
+            border-color: var(--accent);
+            box-shadow: 0 0 0 2px rgba(0, 255, 136, 0.1);
+        }
+
+        .delete-btn {
+            background: #ff4444;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 0.85rem;
+            transition: all 0.3s ease;
+        }
+
+        .delete-btn:hover {
+            background: #ff6666;
+            transform: translateY(-1px);
+        }
+
+        .workout-title-section {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .stats-section {
+            background: var(--bg-card);
+            border-radius: 20px;
+            padding: 30px;
+            border: 1px solid var(--border);
+            box-shadow: var(--shadow);
+        }
+
+        .stats-title {
+            font-size: 1.5rem;
+            font-weight: 700;
+            margin-bottom: 20px;
+            text-align: center;
+            color: var(--accent);
+        }
+
+        .chart-container {
+            position: relative;
+            height: 300px;
+            margin-top: 20px;
+        }
+
+        .stats-info {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .stat-card {
+            background: var(--bg-secondary);
+            padding: 20px;
+            border-radius: 12px;
+            text-align: center;
+            border: 1px solid var(--border);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent);
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-secondary);
+        }
+
+        .empty-state-icon {
+            font-size: 4rem;
+            margin-bottom: 20px;
+            opacity: 0.5;
+        }
+
+        .completion-badge {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            background: var(--accent);
+            color: var(--bg-primary);
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            display: none;
+        }
+
+        .exercise-card.completed .completion-badge {
+            display: block;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 15px;
+            }
+
+            h1 {
+                font-size: 2rem;
+            }
+
+            .add-exercise-section,
+            .exercise-card,
+            .stats-section {
+                padding: 20px;
+            }
+
+            .exercise-header {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .exercise-title {
+                font-size: 1.1rem;
+            }
+
+            .stats-info {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 480px) {
+            h1 {
+                font-size: 1.5rem;
+            }
+
+            .add-exercise-section,
+            .exercise-card,
+            .stats-section {
+                padding: 15px;
+            }
+
+            .btn {
+                padding: 12px 20px;
+                font-size: 0.9rem;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: translateY(20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(0, 255, 136, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 10px rgba(0, 255, 136, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(0, 255, 136, 0);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Spor Takip</h1>
+            <p class="subtitle">Hareketlerinizi takip edin, hedeflerinize reachin</p>
+        </header>
+
+        <section class="workout-title-section">
+            <h2 style="margin-bottom: 20px; color: var(--accent);">Antrenman Başlığı</h2>
+            <div class="input-group">
+                <label for="workout-title">Bugünün Antrenmanı</label>
+                <input type="text" id="workout-title" placeholder="Örn: Karın Günü, Bacak Günü, Üst Vücut..." value="">
+            </div>
+        </section>
+
+        <section class="add-exercise-section">
+            <h2 style="margin-bottom: 20px; color: var(--accent);">Yeni Hareket Ekle</h2>
+            <div class="input-group">
+                <label for="exercise-name">Hareket Adı</label>
+                <input type="text" id="exercise-name" placeholder="Örn: Push-up, Squat, Bench Press...">
+            </div>
+            <div class="input-group">
+                <label>Set ve Tekrar</label>
+                <div class="set-rep-inputs">
+                    <input type="number" id="exercise-sets" placeholder="Set" min="1" value="3">
+                    <input type="number" id="exercise-reps" placeholder="Tekrar" min="1" value="10">
+                </div>
+            </div>
+            <div class="input-group">
+                <label for="exercise-media">Medya (Fotoğraf/Video)</label>
+                <div class="file-input-wrapper">
+                    <input type="file" id="exercise-media" accept="image/*,video/*" multiple>
+                    <label for="exercise-media" class="file-input-label">
+                        <span id="file-label-text">Medya seçmek için tiklayin (Çoklu seçim)</span>
+                    </label>
+                </div>
+                <div id="media-preview" class="media-gallery"></div>
+            </div>
+            <button class="btn" onclick="addExercise()">Hareket Ekle</button>
+        </section>
+
+        <button class="start-workout-btn" onclick="startWorkoutMode()" id="start-workout-btn" style="display: none;">
+            🏋️ Antrenmanı Başlat
+        </button>
+
+        <section class="exercise-list">
+            <h2 style="margin-bottom: 20px; color: var(--accent);">Bugünün Hareketleri</h2>
+            <div id="exercise-container">
+                <div class="empty-state">
+                    <div class="empty-state-icon">Dumbbell</div>
+                    <p>Henüz hareket eklenmemis. Ilk hareketinizi ekleyin!</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="history-section">
+            <h2 style="margin-bottom: 20px; color: var(--accent);">Antrenman Geçmişi</h2>
+            <div id="history-container">
+                <div class="empty-state">
+                    <p>Henüz tamamlanmış antrenman bulunmuyor.</p>
+                </div>
+            </div>
+        </section>
+
+        <section class="stats-section">
+            <h2 class="stats-title">Günlük Özet</h2>
+            <div class="stats-info">
+                <div class="stat-card">
+                    <div class="stat-number" id="total-exercises">0</div>
+                    <div class="stat-label">Toplam Hareket</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="completed-exercises">0</div>
+                    <div class="stat-label">Tamamlanan</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="completion-rate">0%</div>
+                    <div class="stat-label">Tamamlama Orani</div>
+                </div>
+            </div>
+            <div class="chart-container">
+                <canvas id="progress-chart"></canvas>
+            </div>
+        </section>
+    </div>
+
+    <!-- Workout Mode -->
+    <div class="workout-mode" id="workout-mode">
+        <div class="workout-header">
+            <div class="workout-title" id="workout-mode-title">Antrenman</div>
+            <div class="workout-progress" id="workout-progress">1 / 1</div>
+        </div>
+        <div class="exercise-display">
+            <div class="current-exercise">
+                <div class="exercise-name-display" id="current-exercise-name">Hareket Adı</div>
+                <div class="exercise-details">
+                    <div class="detail-item">
+                        <div class="detail-value" id="current-sets">3</div>
+                        <div class="detail-label">Set</div>
+                    </div>
+                    <div class="detail-item">
+                        <div class="detail-value" id="current-reps">10</div>
+                        <div class="detail-label">Tekrar</div>
+                    </div>
+                </div>
+                <div class="workout-media-gallery" id="workout-media-gallery"></div>
+                <div class="workout-note" id="workout-note">Notlar burada görünecek...</div>
+                <div class="workout-controls">
+                    <button class="workout-btn skip" onclick="skipExercise()">Geç</button>
+                    <button class="workout-btn complete" onclick="completeExercise()">Tamamla</button>
+                    <button class="workout-btn exit" onclick="exitWorkoutMode()">Çık</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Assessment Modal -->
+    <div class="assessment-modal" id="assessment-modal">
+        <div class="assessment-content">
+            <div class="assessment-title">Bu antrenman nasıldı?</div>
+            <div class="difficulty-options">
+                <button class="difficulty-btn" data-difficulty="easy" onclick="selectDifficulty('easy')">Kolay</button>
+                <button class="difficulty-btn" data-difficulty="medium" onclick="selectDifficulty('medium')">Orta</button>
+                <button class="difficulty-btn" data-difficulty="hard" onclick="selectDifficulty('hard')">Zor</button>
+            </div>
+            <div class="emoji-feedback">
+                <button class="emoji-btn" data-emoji="😊" onclick="selectEmoji('😊')">😊</button>
+                <button class="emoji-btn" data-emoji="😤" onclick="selectEmoji('😤')">😤</button>
+                <button class="emoji-btn" data-emoji="🔥" onclick="selectEmoji('🔥')">🔥</button>
+                <button class="emoji-btn" data-emoji="💪" onclick="selectEmoji('💪')">💪</button>
+                <button class="emoji-btn" data-emoji="😴" onclick="selectEmoji('😴')">😴</button>
+            </div>
+            <button class="btn" onclick="saveAssessment()">Değerlendirmeyi Kaydet</button>
+        </div>
+    </div>
+
+    <script>
+        let exercises = [];
+        let chart = null;
+        let currentMediaData = [];
+        let workoutMode = false;
+        let currentExerciseIndex = 0;
+        let completedInWorkout = [];
+        let workoutHistory = [];
+        let selectedDifficulty = null;
+        let selectedEmoji = null;
+        let currentWorkoutTitle = '';
+
+        // localStorage'dan verileri yükle
+        function loadData() {
+            const savedExercises = localStorage.getItem('exercises');
+            const savedHistory = localStorage.getItem('workoutHistory');
+            const savedTitle = localStorage.getItem('currentWorkoutTitle');
+            
+            if (savedExercises) {
+                exercises = JSON.parse(savedExercises);
+                renderExercises();
+                updateStats();
+            }
+            
+            if (savedHistory) {
+                workoutHistory = JSON.parse(savedHistory);
+                renderHistory();
+            }
+            
+            if (savedTitle) {
+                document.getElementById('workout-title').value = savedTitle;
+                currentWorkoutTitle = savedTitle;
+            }
+        }
+
+        // localStorage'a verileri kaydet
+        function saveData() {
+            localStorage.setItem('exercises', JSON.stringify(exercises));
+            localStorage.setItem('workoutHistory', JSON.stringify(workoutHistory));
+            localStorage.setItem('currentWorkoutTitle', currentWorkoutTitle);
+        }
+
+        // Medya dosyalarini Base64'e çevir
+        function fileToBase64(file) {
+            return new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.readAsDataURL(file);
+                reader.onload = () => resolve({
+                    data: reader.result,
+                    type: file.type,
+                    name: file.name
+                });
+                reader.onerror = error => reject(error);
+            });
+        }
+
+        // Dosya seçildiinde tetiklenir
+        document.getElementById('exercise-media').addEventListener('change', async function(e) {
+            const files = Array.from(e.target.files);
+            if (files.length > 0) {
+                try {
+                    const mediaPromises = files.map(file => fileToBase64(file));
+                    const mediaResults = await Promise.all(mediaPromises);
+                    currentMediaData = mediaResults;
+                    renderMediaPreview();
+                    document.getElementById('file-label-text').textContent = `${files.length} medya seçildi`;
+                } catch (error) {
+                    console.error('Medya yüklenirken hata:', error);
+                    alert('Medya yüklenemedi. Lütfen tekrar deneyin.');
+                }
+            }
+        });
+
+        // Medya önizlemesini render et
+        function renderMediaPreview() {
+            const preview = document.getElementById('media-preview');
+            preview.innerHTML = currentMediaData.map((media, index) => {
+                const isVideo = media.type.startsWith('video/');
+                return `
+                    <div class="media-item">
+                        ${isVideo ? 
+                            `<video src="${media.data}" controls></video>` : 
+                            `<img src="${media.data}" alt="${media.name}">`
+                        }
+                        <button class="remove-media" onclick="removeMedia(${index})">×</button>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Medya kaldır
+        function removeMedia(index) {
+            currentMediaData.splice(index, 1);
+            renderMediaPreview();
+            const fileInput = document.getElementById('exercise-media');
+            document.getElementById('file-label-text').textContent = currentMediaData.length > 0 ? 
+                `${currentMediaData.length} medya seçildi` : 'Medya seçmek için tiklayin (Çoklu seçim)';
+        }
+
+        // Antrenman başlığını güncelle
+        document.getElementById('workout-title').addEventListener('input', function(e) {
+            currentWorkoutTitle = e.target.value;
+            saveData();
+        });
+
+        // Yeni hareket ekle
+        async function addExercise() {
+            const nameInput = document.getElementById('exercise-name');
+            const setsInput = document.getElementById('exercise-sets');
+            const repsInput = document.getElementById('exercise-reps');
+            
+            const name = nameInput.value.trim();
+            const sets = parseInt(setsInput.value) || 3;
+            const reps = parseInt(repsInput.value) || 10;
+            
+            if (!name) {
+                alert('Lütfen bir hareket adı girin!');
+                return;
+            }
+
+            const exercise = {
+                id: Date.now(),
+                name: name,
+                sets: sets,
+                reps: reps,
+                media: [...currentMediaData],
+                note: '',
+                completed: false,
+                createdAt: new Date().toISOString()
+            };
+
+            exercises.push(exercise);
+            saveData();
+            renderExercises();
+            updateStats();
+            updateStartWorkoutButton();
+
+            // Formu temizle
+            nameInput.value = '';
+            setsInput.value = '3';
+            repsInput.value = '10';
+            currentMediaData = [];
+            document.getElementById('exercise-media').value = '';
+            document.getElementById('file-label-text').textContent = 'Medya seçmek için tiklayin (Çoklu seçim)';
+            renderMediaPreview();
+
+            // Scroll to the new exercise
+            const newCard = document.querySelector(`[data-exercise-id="${exercise.id}"]`);
+            if (newCard) {
+                newCard.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                newCard.classList.add('pulse');
+                setTimeout(() => newCard.classList.remove('pulse'), 2000);
+            }
+        }
+
+        // Hareketleri render et
+        function renderExercises() {
+            const container = document.getElementById('exercise-container');
+            
+            if (exercises.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="empty-state-icon">Dumbbell</div>
+                        <p>Henüz hareket eklenmemis. Ilk hareketinizi ekleyin!</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = exercises.map(exercise => `
+                <div class="exercise-card ${exercise.completed ? 'completed' : ''} fade-in" data-exercise-id="${exercise.id}">
+                    <div class="completion-badge">Tamamlandi</div>
+                    <div class="exercise-header">
+                        <div class="exercise-checkbox">
+                            <div class="checkbox-wrapper">
+                                <input type="checkbox" 
+                                       id="check-${exercise.id}" 
+                                       ${exercise.completed ? 'checked' : ''}
+                                       onchange="toggleExercise(${exercise.id})">
+                            </div>
+                            <label for="check-${exercise.id}" class="exercise-title">${exercise.name}</label>
+                        </div>
+                        <button class="delete-btn" onclick="deleteExercise(${exercise.id})">Sil</button>
+                    </div>
+                    <div class="exercise-details">
+                        <span style="color: var(--accent); font-weight: 600;">${exercise.sets} Set × ${exercise.reps} Tekrar</span>
+                    </div>
+                    ${exercise.media && exercise.media.length > 0 ? 
+                        `<div class="media-gallery">${exercise.media.map(media => {
+                            const isVideo = media.type.startsWith('video/');
+                            return isVideo ? 
+                                `<video src="${media.data}" controls style="width: 100%; max-width: 200px; height: 120px; object-fit: cover; border-radius: 8px;"></video>` :
+                                `<img src="${media.data}" alt="${media.name}" style="width: 100%; max-width: 200px; height: 120px; object-fit: cover; border-radius: 8px;">`;
+                        }).join('')}</div>` : ''
+                    }
+                    <div class="input-group">
+                        <label for="note-${exercise.id}">Notlar</label>
+                        <textarea id="note-${exercise.id}" 
+                                  class="exercise-note" 
+                                  placeholder="Bu hareketle ilgili notlarinizi buraya yazin..."
+                                  onchange="updateNote(${exercise.id}, this.value)">${exercise.note}</textarea>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Antrenman geçmişini render et
+        function renderHistory() {
+            const container = document.getElementById('history-container');
+            
+            if (workoutHistory.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>Henüz tamamlanmış antrenman bulunmuyor.</p>
+                    </div>
+                `;
+                return;
+            }
+
+            container.innerHTML = workoutHistory.slice().reverse().map(workout => `
+                <div class="history-item">
+                    <div class="history-date">${new Date(workout.date).toLocaleDateString('tr-TR', { day: 'numeric', month: 'long', year: 'numeric' })}</div>
+                    <div class="history-title">${workout.title}</div>
+                    <div class="history-stats">
+                        <span class="history-stat">🏋️ ${workout.exercises.length} Hareket</span>
+                        <span class="history-stat">✅ ${workout.completed.length} Tamamlandı</span>
+                        <span class="history-stat">⏱️ ${workout.duration || 'Bilinmiyor'}</span>
+                    </div>
+                    <div>
+                        <span class="history-difficulty difficulty-${workout.difficulty}">${workout.difficulty === 'easy' ? 'Kolay' : workout.difficulty === 'medium' ? 'Orta' : 'Zor'}</span>
+                        <span style="font-size: 1.2rem; margin-left: 10px;">${workout.emoji}</span>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // Antrenman başlatma butonunu güncelle
+        function updateStartWorkoutButton() {
+            const btn = document.getElementById('start-workout-btn');
+            if (exercises.length > 0) {
+                btn.style.display = 'block';
+            } else {
+                btn.style.display = 'none';
+            }
+        }
+
+        // Hareket tamamlama durumunu deðiþtir
+        function toggleExercise(id) {
+            const exercise = exercises.find(e => e.id === id);
+            if (exercise) {
+                exercise.completed = !exercise.completed;
+                saveData();
+                renderExercises();
+                updateStats();
+            }
+        }
+
+        // Not güncelle
+        function updateNote(id, note) {
+            const exercise = exercises.find(e => e.id === id);
+            if (exercise) {
+                exercise.note = note;
+                saveData();
+            }
+        }
+
+        // Hareket sil
+        function deleteExercise(id) {
+            if (confirm('Bu hareketi silmek istediðinizden emin misiniz?')) {
+                exercises = exercises.filter(e => e.id !== id);
+                saveData();
+                renderExercises();
+                updateStats();
+            }
+        }
+
+        // Istatistikleri güncelle
+        function updateStats() {
+            const total = exercises.length;
+            const completed = exercises.filter(e => e.completed).length;
+            const rate = total > 0 ? Math.round((completed / total) * 100) : 0;
+
+            document.getElementById('total-exercises').textContent = total;
+            document.getElementById('completed-exercises').textContent = completed;
+            document.getElementById('completion-rate').textContent = rate + '%';
+
+            updateChart(completed, total - completed);
+        }
+
+        // Grafiði güncelle
+        function updateChart(completed, pending) {
+            const ctx = document.getElementById('progress-chart').getContext('2d');
+            
+            if (chart) {
+                chart.destroy();
+            }
+
+            chart = new Chart(ctx, {
+                type: 'doughnut',
+                data: {
+                    labels: ['Tamamlanan', 'Bekleyen'],
+                    datasets: [{
+                        data: [completed, pending],
+                        backgroundColor: [
+                            '#00ff88',
+                            '#2a2a4a'
+                        ],
+                        borderColor: [
+                            '#00ff88',
+                            '#2a2a4a'
+                        ],
+                        borderWidth: 2
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                color: '#b8bcc8',
+                                padding: 20,
+                                font: {
+                                    size: 14
+                                }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: '#1a1a2e',
+                            titleColor: '#ffffff',
+                            bodyColor: '#b8bcc8',
+                            borderColor: '#2a2a4a',
+                            borderWidth: 1
+                        }
+                    }
+                }
+            });
+        }
+
+        // Antrenman modunu başlat
+        function startWorkoutMode() {
+            if (exercises.length === 0) {
+                alert('Lütfen önce hareket ekleyin!');
+                return;
+            }
+            
+            workoutMode = true;
+            currentExerciseIndex = 0;
+            completedInWorkout = [];
+            
+            const workoutModeElement = document.getElementById('workout-mode');
+            workoutModeElement.classList.add('active');
+            
+            document.getElementById('workout-mode-title').textContent = currentWorkoutTitle || 'Antrenman';
+            
+            displayCurrentExercise();
+        }
+
+        // Mevcut hareketi göster
+        function displayCurrentExercise() {
+            if (currentExerciseIndex >= exercises.length) {
+                finishWorkout();
+                return;
+            }
+            
+            const exercise = exercises[currentExerciseIndex];
+            
+            document.getElementById('current-exercise-name').textContent = exercise.name;
+            document.getElementById('current-sets').textContent = exercise.sets;
+            document.getElementById('current-reps').textContent = exercise.reps;
+            document.getElementById('workout-note').textContent = exercise.note || 'Not bulunmuyor...';
+            document.getElementById('workout-progress').textContent = `${currentExerciseIndex + 1} / ${exercises.length}`;
+            
+            // Medya galerisini render et
+            const mediaGallery = document.getElementById('workout-media-gallery');
+            if (exercise.media && exercise.media.length > 0) {
+                mediaGallery.innerHTML = exercise.media.map(media => {
+                    const isVideo = media.type.startsWith('video/');
+                    return `
+                        <div class="workout-media-item">
+                            ${isVideo ? 
+                                `<video src="${media.data}" controls autoplay loop></video>` : 
+                                `<img src="${media.data}" alt="${media.name}">`
+                            }
+                        </div>
+                    `;
+                }).join('');
+            } else {
+                mediaGallery.innerHTML = '<p style="text-align: center; color: var(--text-secondary);">Bu hareket için medya eklenmemiş.</p>';
+            }
+        }
+
+        // Hareketi tamamla
+        function completeExercise() {
+            completedInWorkout.push(exercises[currentExerciseIndex].id);
+            currentExerciseIndex++;
+            displayCurrentExercise();
+        }
+
+        // Hareketi geç
+        function skipExercise() {
+            currentExerciseIndex++;
+            displayCurrentExercise();
+        }
+
+        // Antrenman modundan çık
+        function exitWorkoutMode() {
+            if (confirm('Antrenmanı iptal etmek istediğinizden emin misiniz?')) {
+                workoutMode = false;
+                document.getElementById('workout-mode').classList.remove('active');
+            }
+        }
+
+        // Antrenmanı bitir
+        function finishWorkout() {
+            workoutMode = false;
+            document.getElementById('workout-mode').classList.remove('active');
+            
+            // Değerlendirme modalını göster
+            document.getElementById('assessment-modal').classList.add('active');
+        }
+
+        // Zorluk seç
+        function selectDifficulty(difficulty) {
+            selectedDifficulty = difficulty;
+            document.querySelectorAll('.difficulty-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            document.querySelector(`[data-difficulty="${difficulty}"]`).classList.add('selected');
+        }
+
+        // Emoji seç
+        function selectEmoji(emoji) {
+            selectedEmoji = emoji;
+            document.querySelectorAll('.emoji-btn').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            document.querySelector(`[data-emoji="${emoji}"]`).classList.add('selected');
+        }
+
+        // Değerlendirmeyi kaydet
+        function saveAssessment() {
+            if (!selectedDifficulty || !selectedEmoji) {
+                alert('Lütfen zorluk ve emoji seçin!');
+                return;
+            }
+            
+            const completedExercises = exercises.filter(e => completedInWorkout.includes(e.id));
+            
+            const workoutData = {
+                title: currentWorkoutTitle || 'İsimsiz Antrenman',
+                date: new Date().toISOString(),
+                exercises: exercises,
+                completed: completedExercises,
+                difficulty: selectedDifficulty,
+                emoji: selectedEmoji,
+                duration: new Date().toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+            };
+            
+            workoutHistory.push(workoutData);
+            saveData();
+            renderHistory();
+            
+            // Modalı kapat ve formu temizle
+            document.getElementById('assessment-modal').classList.remove('active');
+            selectedDifficulty = null;
+            selectedEmoji = null;
+            document.querySelectorAll('.difficulty-btn').forEach(btn => btn.classList.remove('selected'));
+            document.querySelectorAll('.emoji-btn').forEach(btn => btn.classList.remove('selected'));
+            
+            // Bugünkü hareketleri temizle
+            exercises = [];
+            saveData();
+            renderExercises();
+            updateStats();
+            updateStartWorkoutButton();
+            
+            // Antrenman başlığını temizle
+            document.getElementById('workout-title').value = '';
+            currentWorkoutTitle = '';
+            saveData();
+            
+            alert('Antrenman başarıyla tamamlandı! 🎉');
+        }
+
+        // Enter tuşuyla hareket ekle
+        document.getElementById('exercise-name').addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                addExercise();
+            }
+        });
+
+        // Sayfa yüklendiğinde verileri yükle
+        document.addEventListener('DOMContentLoaded', function() {
+            loadData();
+            updateStartWorkoutButton();
+            
+            // PWA için service worker kaydet
+            if ('serviceWorker' in navigator) {
+                const swCode = `
+                    self.addEventListener('install', event => {
+                        event.waitUntil(
+                            caches.open('v1').then(cache => {
+                                return cache.addAll([
+                                    '/',
+                                    '/spor-takip.html'
+                                ]);
+                            })
+                        );
+                    });
+
+                    self.addEventListener('fetch', event => {
+                        event.respondWith(
+                            caches.match(event.request).then(response => {
+                                return response || fetch(event.request);
+                            })
+                        );
+                    });
+                `;
+                
+                const blob = new Blob([swCode], { type: 'application/javascript' });
+                const swUrl = URL.createObjectURL(blob);
+                
+                navigator.serviceWorker.register(swUrl).then(registration => {
+                    console.log('Service Worker registered:', registration);
+                }).catch(error => {
+                    console.log('Service Worker registration failed:', error);
+                });
+            }
+        });
+
+        // Her 30 saniyede bir verileri kaydet (otomatik yedekleme)
+        setInterval(() => {
+            if (exercises.length > 0) {
+                saveData();
+            }
+        }, 30000);
+    </script>
+</body>
+</html>
